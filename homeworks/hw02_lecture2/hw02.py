@@ -48,7 +48,7 @@ def format_report(rows):
         >>> format_report([('accuracy', 0.87654), ('loss', 0.12345)])
         'accuracy  : 0.8765\\nloss      : 0.1235'
     """
-    raise NotImplementedError
+    return '\n'.join(f'{name:<10}: {value:.4f}' for name, value in rows)
 
 
 # ---------------------------------------------------------------------------
@@ -70,7 +70,15 @@ def normalize_tokens(text):
         >>> normalize_tokens('The cat, the CAT and the dog! The cat.')
         ['the', 'cat', 'and', 'dog']
     """
-    raise NotImplementedError
+    translator = str.maketrans('', '', string.punctuation)
+    words = text.lower().translate(translator).split()
+    result = []
+    seen = set()
+    for word in words:
+        if word not in seen:
+            seen.add(word)
+            result.append(word)
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -95,7 +103,9 @@ def top_k(pairs, k):
         >>> top_k(scores, 0)
         []
     """
-    raise NotImplementedError
+    if k <= 0:
+        return []
+    return sorted(pairs, key=lambda pair: pair[1], reverse=True)[:k]
 
 
 # ---------------------------------------------------------------------------
@@ -115,7 +125,10 @@ def group_by_length(words):
         >>> group_by_length('the cat and the dog and the bird'.split())
         {3: ['the', 'cat', 'and', 'the', 'dog', 'and', 'the'], 4: ['bird']}
     """
-    raise NotImplementedError
+    groups = {}
+    for word in words:
+        groups.setdefault(len(word), []).append(word)
+    return groups
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +146,10 @@ def word_frequencies(text):
         >>> word_frequencies('the cat and the dog and the bird')
         {'the': 3, 'cat': 1, 'and': 2, 'dog': 1, 'bird': 1}
     """
-    raise NotImplementedError
+    frequencies = {}
+    for word in text.split():
+        frequencies[word] = frequencies.get(word, 0) + 1
+    return frequencies
 
 
 def common_words(freq_a, freq_b):
@@ -155,7 +171,7 @@ def common_words(freq_a, freq_b):
     то, сколько раз они встретились – 'b' и 'c' попадают в ответ,
     хотя их количества в freq_a и freq_b разные.
     """
-    raise NotImplementedError
+    return freq_a.keys() & freq_b.keys()
 
 
 # ---------------------------------------------------------------------------
@@ -174,7 +190,11 @@ def save_and_load_json(data, path):
         >>> save_and_load_json({'a': (1, 2, 3), 1: 'one'}, path)
         {'a': [1, 2, 3], '1': 'one'}
     """
-    raise NotImplementedError
+    with open(path, 'w', encoding='utf-8') as file:
+        json.dump(data, file, indent=4, ensure_ascii=False)
+
+    with open(path, 'r', encoding='utf-8') as file:
+        return json.load(file)
 
 
 # ---------------------------------------------------------------------------
@@ -200,7 +220,13 @@ def write_read_csv(rows, path):
         >>> write_read_csv(rows, path) == rows
         True
     """
-    raise NotImplementedError
+    with open(path, 'w', encoding='utf-8', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(rows)
+
+    with open(path, 'r', encoding='utf-8', newline='') as file:
+        reader = csv.reader(file)
+        return list(reader)
 
 
 # ---------------------------------------------------------------------------
@@ -227,7 +253,16 @@ def calculate(op, a, b):
             ...
         ValueError: unsupported operation: %
     """
-    raise NotImplementedError
+    operations = {
+        '+': lambda x, y: x + y,
+        '-': lambda x, y: x - y,
+        '*': lambda x, y: x * y,
+        '/': lambda x, y: x / y,
+        '**': lambda x, y: x ** y,
+    }
+    if op not in operations:
+        raise ValueError(f'unsupported operation: {op}')
+    return operations[op](a, b)
 
 
 # ---------------------------------------------------------------------------
@@ -250,7 +285,13 @@ def moving_average(values, window):
         >>> moving_average([1, 2], 5)
         []
     """
-    raise NotImplementedError
+    if window <= 0 or window > len(values):
+        return []
+
+    result = []
+    for start in range(len(values) - window + 1):
+        result.append(sum(values[start:start + window]) / window)
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -279,4 +320,13 @@ def first_n_odd(iterable, n):
         >>> first_n_odd([1, 2, 3], 5)
         [1, 3]
     """
-    raise NotImplementedError
+    result = []
+    iterator = iter(iterable)
+    while len(result) < n:
+        try:
+            value = next(iterator)
+        except StopIteration:
+            break
+        if value % 2:
+            result.append(value)
+    return result
